@@ -25,6 +25,7 @@ logger.setLevel(logging.DEBUG)
 MODE1, MODE2, MODE3 = 0,1,2
 class makeResistGeneProfiles(object):
     def __init__(self, args):
+        self.virulenceFactorList=['afaE1_SaT040','afaE3','astA_ecol_42','bmaE_IH11165','cdtB_IHE3034','chuA_CFT073','chuS_CFT073','chuT_CFT073','chuU_CFT073','chuW_CFT073','chuX_CFT073','chuY_CFT073','clbA_IHE3034','clbB_IHE3034','clbN_IHE3034','clbQ_IHE3034','clpG','cnf1','cvaC_pAPECO2ColV','draA_IH11128','draB_IH11128','draC_IH11128','draD_IH11128','draE_IH11128','draP_IH11128','entA_CFT073','entB_CFT073','entC_CFT073','entD_CFT073','entE_CFT073','entF_CFT073','F17-like_fimbrial_Chaperone_ecol_536','F17-like_fimbrial_subuniT_ecol_536','F17-like_fimbrial_usher_ecol_536','F17-like_fimbrial_adhesin_subunit_ecol_536','feoB_CFT073','fepA_CFT073','fepB_CFT073','fepC_CFT073','fepD_CFT073','fepE_CFT073','fepG_CFT073','fimA_CFT073','fimB_CFT073','fimC_CFT073','fimD_CFT073','fimE_CFT073','fimF_CFT073','fimG_CFT073','fimH_CFT073','fimI','focA_CFT073','focC_CFT073','focD_CFT073','focF_CFT073','focG_CFT073','focH_CFT073','sfaD_CFT073','fyuA_APEC01','gafD','H7_fliC_CFT073','hlyA_CFT073','hlyB_CFT073','hlyC_CFT073','hlyD_CFT073','hlyF_pETN48','hra_AY040859.1_Hek','ibeA_VF0237','ibeB_RS218','ibeC_VF0237','iha_O157_H7','ireA_APEC01','iroN_CFT073','irp-2_APEC01','iss_AF042279.1','iucA_CFT073','iucB_CFT073','iucC_CFT073','iucD_CFT073','iutA_CFT073','kfiC','kpsD_CFT073','kpsM_CFT073','kpsM_K15_ecol_536','kpsT','malX_CFT073','nfaE_O83_K1_H4','ompA_NMEC58C','ompT_CFT073','papA_CFT073','papB_CFT073','papC_CFT073','papD_CT073','papE_CFT073','papF_CFT073','papG_CFT073','papH_CFT073','papI_CFT073','papJ_CFT073','papK_CFT073','pic_CFT073','rfc_K12_MG1655','sat_ecolCFT073','sfaA_VF0235','sfaB_ecol_536','sfaC_ecol_536','sfaD_ecol_536','sfaE_ecol_536','sfaF_ecol_536','sfaG_ecol_536','sfaH_ecol_536','sfaS_ecol_536','tcpC_CFT073','traJ_VF0241','traT_pAPECO2ColV','tsh_CFT073','uspA_CFT073','vat_APEC01','yfcV_CFT073']
         self.sampleFile=args[0]
         self.modePred=args[1]
         self.modeGene=args[2]
@@ -105,7 +106,7 @@ class makeResistGeneProfiles(object):
             exactMatch = 0
             inexactMatch = 0
             while n < len(lines):
-                line = lines[n]
+                line = lines[n].replace(",notes", "_notes")
                 n+=1
                 if line.startswith("#"):
                     continue
@@ -128,10 +129,11 @@ class makeResistGeneProfiles(object):
                             exactList[geneName].append(line.strip())
                         
                 if inexactMatch:
+                    line = lines[n].replace(",notes", "_notes")
                     if "* Resistance prediction" in line:
                         break
                     cols = line.strip().rstrip().split(",")
-                    if float(cols[1].split(":")[0]) < 80:
+                    if float(cols[1].split(":")[0].split("|")[0]) < 80:
                         continue
                                                         
                     inexactList[cols[0].split(":")[0]]=[line.strip()]
@@ -140,6 +142,7 @@ class makeResistGeneProfiles(object):
 
         resistanceProfile = {}
         for line in lines[n:]:
+            line = line.replace(",notes", "_notes")
             cols = line.strip().replace(", possible", "-possible").split(",")
             if len(cols) <=2:
                 continue
@@ -170,7 +173,8 @@ class makeResistGeneProfiles(object):
 
             for item in exactList:
                 inList=0
-                
+                if item in self.virulenceFactorList:
+                    continue
                 for idx, gene in enumerate(self.geneList):
                     if item.startswith(gene):
                         outCols[idx + 1].append(item)
@@ -183,8 +187,11 @@ class makeResistGeneProfiles(object):
                 if inList==0:
                     outCols[-1].append(item)
             for item in inexactList:
+                if item in self.virulenceFactorList:
+                    continue
+
                 inList =0
-                pident = inexactList[item][0].split(",")[1].split(":")[0]
+                pident = inexactList[item][0].split(",")[1].split(":")[0].split("|")[0]
                 #if float(pident) == 100:
                 #    pident = "98.0"
                 for idx, gene in enumerate(self.geneList):
@@ -204,7 +211,11 @@ class makeResistGeneProfiles(object):
             foG.write("{0}\n".format(",".join(outLine)))
 
         else: #write one gene per line
+
             for item in sorted(exactList.keys()):
+                if item in self.virulenceFactorList:
+                    continue
+
                 lines= exactList[item]
                 for line in lines:
                     cols = line.strip().rstrip().split(",")
@@ -222,13 +233,16 @@ class makeResistGeneProfiles(object):
                     
                     foG.write("{0}\n".format(",".join(outCols)))
             for item in sorted(inexactList.keys()):
+                if item in self.virulenceFactorList:
+                    continue
+
                 lines= inexactList[item]
                 for line in lines:
                     cols = line.strip().rstrip().split(",")
                     outCols = [""]*nCols
                     outCols[0] = sample
                     outCols[1] = "inexactMatch"
-                    outCols[2] = cols[1][:20].strip()
+                    outCols[2] = cols[1].strip()
                     outCols[3]= cols[0].split(":")[0]
                     outCols[4] = cols[0].split(":")[1]
                     for idx in range(2, len(cols)):
@@ -246,10 +260,13 @@ class makeResistGeneProfiles(object):
         line[0] = sample
         if self.modePred==MODE1:
             for x in resistanceProfile:
+                if x == "virulence factor":
+                    continue
                 if x == "ampicillin":
                     line[self.drugDict["amoxicillin_ampicillin"]] = resistanceProfile[x]
                 else:
                     line[self.drugDict[x]] = resistanceProfile[x]
+
         if self.modePred == MODE2:
             for x in resistanceProfile:
                 if x in drugDict:

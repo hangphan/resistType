@@ -8,5 +8,8 @@ rm resistDB/clusterFas/*
 mkdir -p resistDB/clusterFas/
 python src/makeClusterMFA.py
 #prepare resistance gene file for bwa mapping
-bwa index resistDB/ResistanceGeneSeqs.fasta
+bin/bwa index resistDB/ResistanceGeneSeqs.fasta
+
+python src/paddingFasta.py resistDB/ResistanceGeneSeqs_fw.fasta
+
 exit

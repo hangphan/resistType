@@ -74,6 +74,100 @@ import os
 # 71 streptomycin
 # 72 fosfomycin
 # 73 chloramphenicol
+# 74 nalidixic
+# 75 acid
+# 76 norfloxacin
+# 77 ofloxacin
+# 78 ciprofloxacin
+# 79 levofloxacin
+# 80 moxifloxacin
+# 81 trimethoprim
+# 82 sulfamethoxazole
+# 83 co-trimoxazole
+# 84 nitrofurantoin
+# 85 colistin
+# 86 notes_on_phenotype
+# 87 prediction_confidence_level
+# 88 additional_ref_authors
+# 89 additional_ref_1
+# 90 additional_ref_2
+# 91 audit_notes
+
+
+# 0 gene_name
+# 1 notes
+# 2 alternative_name_1
+# 3 alternative_name_2
+# 4 alternative_name_3
+# 5 alternative_name_4
+# 6 location
+# 7 accession_number_1
+# 8 start_pos
+# 9 end_pos
+# 10 length
+# 11 sequence
+# 12 rev_comp
+# 13 is_rev_complement
+# 14 aa_sequence
+# 15 PubmedID
+# 16 reference_author
+# 17 reference_title
+# 18 reference_publication
+# 19 pub_host_organism
+# 20 summary_resistance_class
+# 21 sub_resistance_class
+# 22 primers_forward
+# 23 primers_reverse
+# 24 primers_seq_forward
+# 25 primers_seq_reverse
+# 26 primers_universal_forward
+# 27 primers_universal_reverse
+# 28 primer_references
+# 29 ambler_class
+# 30 bush_jacoby_class
+# 31 OXA_family
+# 32 phenicol_resistance_group
+# 33 penicillin
+# 34 amoxicillin_ampicillin
+# 35 cephalexin
+# 36 cefuroxime
+# 37 cefoxitin
+# 38 ceftriaxone
+# 39 ceftazidime
+# 40 cefepime
+# 41 co-amoxiclav
+# 42 piperacillin-tazobactam
+# 43 carbapenems
+# 44 aztreonam
+# 45 carbenicillin
+# 46 oxacillin
+# 47 tetracycline
+# 48 minocycline
+# 49 doxycycline
+# 50 tigecycline
+# 51 arbekacin
+# 52 amikacin
+# 53 astromycin_fortimicin
+# 54 butirosin
+# 55 gentamicin
+# 56 hygromycin_B
+# 57 isepamicin
+# 58 sisomicin
+# 59 5-epi-sisomicin
+# 60 dibekacin
+# 61 netilmicin
+# 62 2'-N-ethylnetilmicin
+# 63 6'-N-ethylnetilmicin
+# 64 tobramycin
+# 65 kanamycin
+# 66 neomycin
+# 67 lividomycin
+# 68 paromomycin
+# 69 ribostamycin
+# 70 spectinomycin
+# 71 streptomycin
+# 72 fosfomycin
+# 73 chloramphenicol
 # 74 nalidixic acid
 # 75 norfloxacin
 # 76 ofloxacin
@@ -157,9 +251,9 @@ class geneFeatures(object):
             self.OXAFam=cols[31]
             headerKeys = headerLine.strip().split("\t")
             self.resistanceProfile={}
-            for i in range(33,min(len(cols), 84)):
+            for i in range(33,min(len(cols), 86)):
                 if cols[i].strip() != "":
-                    self.resistanceProfile[headerKeys[i]]= cols[i].strip()
+                    self.resistanceProfile[headerKeys[i]]= cols[i].strip().replace(",", "_")
 class CResistDB(object):
     def __init__(self, fileName):
         self.resistanceGenes = {}

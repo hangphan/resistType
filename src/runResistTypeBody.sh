@@ -115,8 +115,9 @@ then
     then
 	python $SCRIPTDIR/resistType_v0.1.py -s $SAMPLEID -r $REFID
     else
-	echo SPAdes assembly failed, running resistance prediction on metagenomics mode (no copy number estimation)
+	echo SPAdes assembly failed, running resistance prediction on metagenomics mode no copy number estimation
 	python $SCRIPTDIR/resistType_v0.1.py -s $SAMPLEID -m 1
+    fi
 else
     python $SCRIPTDIR/resistType_v0.1.py -s $SAMPLEID -m 1
 fi

@@ -179,7 +179,7 @@ class ResistType(object):
         logger.info(cmdLine)
         os.system(cmdLine)
         self.spadesPath = 'spades.py'
-        cmdLine = '{0} -1 filteredFastq/{1}/reads1.fq.gz -2 filteredFastq/{1}/reads2.fq.gz -o tmpDir/{1}   --careful -t 6  --phred-offset 33'.format(self.spadesPath, self.suffix)
+        cmdLine = '{0} -1 filteredFastq/{1}/reads1.fq.gz -2 filteredFastq/{1}/reads2.fq.gz -o tmpDir/{1}   --careful -t 6  --phred-offset 33 -k 21,33,55,77'.format(self.spadesPath, self.suffix)
         os.system(cmdLine)
         cmdLine = 'cp tmpDir/{0}/contigs.fasta resistType/{0}/contigs.fasta'.format(self.suffix)
         os.system(cmdLine)
@@ -224,16 +224,15 @@ class ResistType(object):
                 if len(stdContigs)==0:
                     logger.info("assembly too fragmented. Skip copy number estimation")
                     self.isMetaGenomics = True
-                    continue
-
-                count = 0
-                for i in range (nRegions):
-                    randidx = random.randint(0, len(stdContigs)-1)
-                    randContigID, randContigLen = stdContigs[randidx]
-                    randContigStart = random.randint(0, randContigLen- 2001)
-                    randSeq = str(contigs[randContigID].seq)[randContigStart: randContigStart + 2000]
-                    randContigID = "REF_" + randContigID + "_" + str(randContigStart)
-                    fo.write(">{0}\n{1}{2}{1}\n".format(randContigID, nSeq, randSeq, nSeq ))
+                else:
+                    count = 0
+                    for i in range (nRegions):
+                        randidx = random.randint(0, len(stdContigs)-1)
+                        randContigID, randContigLen = stdContigs[randidx]
+                        randContigStart = random.randint(0, randContigLen- 2001)
+                        randSeq = str(contigs[randContigID].seq)[randContigStart: randContigStart + 2000]
+                        randContigID = "REF_" + randContigID + "_" + str(randContigStart)
+                        fo.write(">{0}\n{1}{2}{1}\n".format(randContigID, nSeq, randSeq, nSeq ))
 
             for record in fullRecords:
                 if self.refid == KPNE and 'ecol' in record:
@@ -360,9 +359,11 @@ class ResistType(object):
                         qprot = qseq.translate(table="Bacterial")
 
                 lenRatio=float(len(str(newSseq).replace("-", "")))/qlen
-                pident = pident * lenRatio
+                
                 dnaMismatches = self.getMismatches(qseqid, newQseq, newSseq, mode=0, isDNA=1)
+                pident = (len(str(newSseq).replace("-", "")) - len(dnaMismatches))/qlen *100
                 newVector=[qseqid, pident, dnaMismatches, newSseq, newQseq, isTruncated, sprot, qprot, newSstart, newSend]
+                
 
                 if len(dnaMismatches.keys()) - int(mismatch) - offset1 - offset2  > 100:
                     logger.error("Something wrong, too much diffs: {0}".format(line))
@@ -436,6 +437,7 @@ class ResistType(object):
         for contig in contigs_genes:
 
             for hit in contigs_genes[contig]:
+
                 [gene, pident, dnaMismatches, sseq, qseq] = hit[:5]
                 isTruncated = hit[5]
                 if isTruncated > 0:
@@ -447,12 +449,13 @@ class ResistType(object):
                     continue
                 logger.info("{0}".format("\t".join(map(str, [gene, contig, len(sseq), pident]))))
                 #newVector=[qseqid, pident, dnaMismatches, newSseq, newQseq, sprot, qprot, newSstart, newSend]
-                items = genes_contigs[gene]
                 isTruncatedProtein=0
-                contigName, sstart, send = item[0], item[4], item[5]
+                items = genes_contigs[gene]
                 proteinMismatches=None
                 for item in items:
-                    if gene in self.promoters or "-" in sseq or "-" in qseq: #if is promoter of there is gap in the alignment, indication of frameshift mutations, no point to translate and compare
+                    contigName, sstart, send = item[0], item[4], item[5]
+                    #if is promoter of there is gap in the alignment, indication of frameshift mutations, no point to translate and compare
+                    if gene in self.promoters or "-" in sseq or "-" in qseq: 
                         fo.write(">{0}\tcloseHit:mappedContig:{1}\t{2}\n{3}\n".format(gene, ":".join(map(str, item[:-2]) ), item[-1], item[-2]))   
                         if gene not in self.promoters:
                             sprot = str(Seq(str(sseq).replace("-", "")).translate(table="Bacterial"))
@@ -465,6 +468,7 @@ class ResistType(object):
                         self.resistGenesMismatch[gene]= [pident, dnaMismatches, proteinMismatches, isTruncatedProtein , None, [contigName, sstart, send]]
                         candidateList.add(self.geneClusterMap[gene])
                     else:
+                        
                         sseq = Seq(str(sseq).replace("-", ""), generic_dna)
                         sprot = sseq.translate(table="Bacterial")
                         isInProtSeq = self.inProtSeqDB(sprot)
@@ -474,7 +478,7 @@ class ResistType(object):
                                 isTruncatedProtein = 1
                         if isInProtSeq != None:
                             self.resistGenesMatch.append([isInProtSeq, "protMatch", None, None, None, [contigName, sstart, send]]) 
-                            fo.write(">{0}\tproteinLevelMatch1:mappedContig:{1}\t{2}\n{3}\n".format(isInProtSeq, ":".join(map(str, item[:-2]) ), item[-1], item[-2]))  
+                            fo.write(">{0}\tproteinLevelMatch1:mappedContig:{1}\t{2}\n{3}\n".format(isInProtSeq, ":".join(map(str, item[:-2]) ), item[-1], item[-2]))
                             continue
                         proteinMismatches= self.getMismatches(gene, qseq, sseq, mode=0, isDNA=0)
                         if dnaMismatches == None:
@@ -487,8 +491,8 @@ class ResistType(object):
                             self.resistGenesMismatch[gene] = [pident, dnaMismatches, proteinMismatches, isTruncatedProtein, None, [contigName, sstart, send]]
                             fo.write(">{0}\tcloseHit:mappedContig:{1}\t{2}\n{3}\n".format(gene, ":".join(map(str, item[:-2]) ), item[-1], item[-2]))  
                 candidateList.add(self.geneClusterMap[gene])
-        
         self.estimateCopyNumber()
+        
         return [set(list(candidateList) + list(overlapGeneSet)), backToReference]
 
     def estimateCopyNumber(self):
