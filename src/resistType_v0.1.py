@@ -69,20 +69,15 @@ class ResistType(object):
     def __init__(self, args):
         self.args = args
         self.refid = args[0]
-        if args[1].endswith('.bam'):
-            self.sampleid = args[1].split('/')[-1].split('_R000')[0]
-            self.samplePath = args[1]
-        else:
-            self.sampleid = args[1]
-            self.samplePath = 'data/_extensions/bam/{0}_{1}_v3.bam'.format(self.sampleid, self.refid)
+        self.sampleid = args[1]
         self.suffix=self.sampleid            
-        if args[2] != None:
-            self.batchName= args[2]
-            self.suffix=self.plateName + "/" + self.sampleid 
+        if args[3] != None:
+            self.batchName= args[3]
+            self.suffix=self.batchName + "/" + self.sampleid 
         else:
             self.batchName = None
 
-        self.isMetaGenomics = args[3]
+        self.isMetaGenomics = args[4]
 
         self.nSamples, self.sumLen = None, None  #estimate of how mixed the sample is (1 = pure culture, 2 = mixture of two subtypes, >2: metagenomic samples)
         self.meanCov, self.stdCov, self.meanDP = None, None, None  #Cov is coverage for contigs, DP is coverage depth for alignment bam
@@ -92,6 +87,8 @@ class ResistType(object):
 
         self.spadesContigFile=self.spadesOutputDir + "contigs.fasta"
         self.contigFile = self.spadesContigFile
+        if args[2]!= None:
+            self.contigFile = args[2]
 
         self.refFile = self.outputDir + '/reference.fa'
         self.bamFile = self.outputDir + '/output.bam'
@@ -163,7 +160,7 @@ class ResistType(object):
                 pass
             self.getFastaSeqs()
             self.refineGeneSearch()
-
+            
         self.makePredictions()
         self.outputStatsFile.close()
         logger.info("Finished resistType")
@@ -179,18 +176,23 @@ class ResistType(object):
         logger.info(cmdLine)
         os.system(cmdLine)
         self.spadesPath = 'spades.py'
-        cmdLine = '{0} -1 filteredFastq/{1}/reads1.fq.gz -2 filteredFastq/{1}/reads2.fq.gz -o tmpDir/{1}   --careful -t 6  --phred-offset 33 -k 21,33,55,77'.format(self.spadesPath, self.suffix)
+        self.contigFile = 'resistType/{0}/contigs.fasta'.format(self.suffix)
+        self.fastqFile1 =  "filteredFastq/{0}/reads1.fq.gz".format(self.suffix)
+        self.fastqFile2 =  "filteredFastq/{0}/reads2.fq.gz".format(self.suffix)
+
+        cmdLine = '{0} -1 {1} -2 {2} -o tmpDir/{3}   --careful -t 6  --phred-offset 33 '.format(self.spadesPath, self.fastqFile1, self.fastqFile2, self.suffix)
+
+        print cmdLine
         os.system(cmdLine)
-        cmdLine = 'cp tmpDir/{0}/contigs.fasta resistType/{0}/contigs.fasta'.format(self.suffix)
+        cmdLine = 'cp tmpDir/{0}/*.fa* resistType/{0}/'.format(self.suffix)
+        os.system(cmdLine)
+        cmdLine = 'cp tmpDir/{0}/*log resistType/{0}/'.format(self.suffix)
         os.system(cmdLine)
         cmdLine = 'rm -rf tmpDir/{0}/'.format(self.suffix)
         os.system(cmdLine)
 
-        self.contigFile = 'resistType/{0}/contigs.fasta'.format(self.suffix)
-        self.fastqFile1 =  "filteredFastq/{0}/reads1.fq.gz".format(self.suffix)
-        self.fastqFile2 =  "filteredFastq/{0}/reads2.fq.gz".format(self.suffix)
         
-
+        
         
     def inProtSeqDB(self, prot):
         '''
@@ -550,7 +552,6 @@ class ResistType(object):
 
     def runBWA(self):
         if not os.path.exists(self.fastqFile1):
-                                
             return 0
         logger.info("Run bwa to align to candidate genes")
         logger.info("Start BWA mapping")
@@ -647,7 +648,7 @@ class ResistType(object):
 
         ResistDB= CResistDB(self.resistDBFile)
         thisSpecies='none'
-        if self.refid in ['Ecol', 'Kpne']:
+        if self.refid in ['Ecol', 'Kpne', 'Koxy', 'Paer']:
             thisSpecies = self.refid
         self.outPredictionFile = '{0}/resistancePred.txt'.format(self.outputDir)
         self.outGenotypeFile='{0}/genotypePred.txt'.format(self.outputDir)
@@ -826,9 +827,12 @@ if __name__ == "__main__":
     parser = OptionParser(usage=usage, version=version)
     parser.add_option("-r", "--refid", dest="refid", type="string", default=None, help="Reference identification")
     parser.add_option("-s", "--sampleName", dest="sampleName", type="string", default=None, help="Sample name")
+    parser.add_option("-c", "--assemblyFile", dest = "assemblyFile", type="string", default = None, help="path to assembly file")
     parser.add_option("-b", "--batchName", dest="batchName", type="string", default=None, help="Batch name")
+
     parser.add_option("-m", "--metaGenomics", dest = "metaGenomics", type="int", default = 0, help="Sample is metagenomics data. Will filter reads before assembly.")
+
     (opts, args) = parser.parse_args()
     
-    resistTypeModule= ResistType([opts.refid, opts.sampleName, opts.batchName, opts.metaGenomics])
+    resistTypeModule= ResistType([opts.refid, opts.sampleName, opts.assemblyFile, opts.batchName, opts.metaGenomics])
     resistTypeModule.runResistType()

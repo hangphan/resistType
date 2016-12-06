@@ -93,98 +93,6 @@ import os
 # 90 additional_ref_2
 # 91 audit_notes
 
-
-# 0 gene_name
-# 1 notes
-# 2 alternative_name_1
-# 3 alternative_name_2
-# 4 alternative_name_3
-# 5 alternative_name_4
-# 6 location
-# 7 accession_number_1
-# 8 start_pos
-# 9 end_pos
-# 10 length
-# 11 sequence
-# 12 rev_comp
-# 13 is_rev_complement
-# 14 aa_sequence
-# 15 PubmedID
-# 16 reference_author
-# 17 reference_title
-# 18 reference_publication
-# 19 pub_host_organism
-# 20 summary_resistance_class
-# 21 sub_resistance_class
-# 22 primers_forward
-# 23 primers_reverse
-# 24 primers_seq_forward
-# 25 primers_seq_reverse
-# 26 primers_universal_forward
-# 27 primers_universal_reverse
-# 28 primer_references
-# 29 ambler_class
-# 30 bush_jacoby_class
-# 31 OXA_family
-# 32 phenicol_resistance_group
-# 33 penicillin
-# 34 amoxicillin_ampicillin
-# 35 cephalexin
-# 36 cefuroxime
-# 37 cefoxitin
-# 38 ceftriaxone
-# 39 ceftazidime
-# 40 cefepime
-# 41 co-amoxiclav
-# 42 piperacillin-tazobactam
-# 43 carbapenems
-# 44 aztreonam
-# 45 carbenicillin
-# 46 oxacillin
-# 47 tetracycline
-# 48 minocycline
-# 49 doxycycline
-# 50 tigecycline
-# 51 arbekacin
-# 52 amikacin
-# 53 astromycin_fortimicin
-# 54 butirosin
-# 55 gentamicin
-# 56 hygromycin_B
-# 57 isepamicin
-# 58 sisomicin
-# 59 5-epi-sisomicin
-# 60 dibekacin
-# 61 netilmicin
-# 62 2'-N-ethylnetilmicin
-# 63 6'-N-ethylnetilmicin
-# 64 tobramycin
-# 65 kanamycin
-# 66 neomycin
-# 67 lividomycin
-# 68 paromomycin
-# 69 ribostamycin
-# 70 spectinomycin
-# 71 streptomycin
-# 72 fosfomycin
-# 73 chloramphenicol
-# 74 nalidixic acid
-# 75 norfloxacin
-# 76 ofloxacin
-# 77 ciprofloxacin
-# 78 levofloxacin
-# 79 moxifloxacin
-# 80 trimethoprim
-# 81 sulfamethoxazole
-# 82 co-trimoxazole
-# 83 nitrofurantoin
-# 84 notes_on_phenotype
-# 85 prediction_confidence_level
-# 86 additional_ref_authors
-# 87 additional_ref_1
-# 88 additional_ref_2
-# 89 audit_notes
-
 class geneFeatures(object):
     def __init__(self, line, headerLine):
         cols = line.strip().split("\t")
@@ -251,9 +159,10 @@ class geneFeatures(object):
             self.OXAFam=cols[31]
             headerKeys = headerLine.strip().split("\t")
             self.resistanceProfile={}
-            for i in range(33,min(len(cols), 86)):
+            for i in range(33,min(len(cols), 85)):
                 if cols[i].strip() != "":
                     self.resistanceProfile[headerKeys[i]]= cols[i].strip().replace(",", "_")
+
 class CResistDB(object):
     def __init__(self, fileName):
         self.resistanceGenes = {}
@@ -286,13 +195,13 @@ class CResistDB(object):
     
     def resistancePrediction(self, exactMatchList, mismatchDic, species, foN, sampleName, genotypeFile):
 
-
         fog = open(genotypeFile, 'w')
         fo= open(foN, "w")
         exactMatchList = sorted(exactMatchList)
         exactMatchList1 = [thisGene[0] for thisGene in exactMatchList]
         #TODO: need to check if have duplicated match 
-
+        hasTEM=0
+        hasAmpC=0
         fo.write("#Antibiotic resistance for {0}\n".format(sampleName))
         fo.write("********** List of presence genes: ***********\n")
         #exactMatchGenes="\t".join(thisGene[0] for thisGene in exactMatchList )
@@ -303,6 +212,10 @@ class CResistDB(object):
         fo.write("Exact gene matches: \n")
         for gene in exactMatchList:
             fo.write("\t{0}".format(gene[0]))
+            if gene[0].startswith('TEM'):
+                hasTEM=1
+            if gene[0].startswith('ampC'):
+                hasAmpC=1
             #outGline: resistancePredictionProgram, sampleName, geneName, sequence coverage, percentIdentity, dnaMismatches(for exact match, only dnaMatch or protein match), coverage, protein truncated, comments- mapped contigs
             if gene[4]:
                 copyNumber = gene[4]
@@ -320,6 +233,7 @@ class CResistDB(object):
             fog.write("{0}\n".format(",".join(map(str, outGLine))))
             fo.write(":{0}|{1}|{2}".format(copyNumber, gene[1], "|".join(map(str, gene[-1]))))
             featureProfile = self.getResistanceGeneFeature(gene[0])
+
             if featureProfile == None:
                 fo.write("\n")
                 continue
@@ -328,21 +242,28 @@ class CResistDB(object):
         fo.write("Inexact matches: {0} (sequences with many mismatches likely having indels causing frameshift, or sequence where there are many Ns because it's too  diverged from the reference sequence for the aligner to map to)\n".format(len(mismatchDic.keys()))) #print number of inexact matches
         
         for gene in sorted(mismatchDic.keys()):
-            if mismatchDic[gene][4]:
+            pident, mismatches, proteinMismatches, copyNumber, isTruncatedProtein = mismatchDic[gene][:5]
+
+            if gene.startswith('TEM') and pident>0.95 and not isTruncatedProtein:
+                hasTEM=1
+            if gene.startswith('ampC') and pident >0.95 and not isTruncatedProtein:
+                hasAmpC=1
+
+            if copyNumber:
                 copyNumber = str(mismatchDic[gene][4])
             else:
                 copyNumber = "None"
             fo.write("\t{0}:{1}|{2},{3:.2f}".format(gene,  copyNumber, "|".join(map(str, mismatchDic[gene][-1])), mismatchDic[gene][0])) 
                                                #print gene name, copyNumber variant, percent identity          
-            outGLine=["resistType", sampleName, gene, 100.0, mismatchDic[gene][0], "", copyNumber, mismatchDic[gene][3], "|".join(map(str, mismatchDic[gene][-1]))]
-            mismatches = mismatchDic[gene][1]
-            dnaMutationList=["{0}{1}{2}".format(mismatches[k][0], k+1, mismatches[k][1]) for k in mismatches.keys()]
+            outGLine=["resistType", sampleName, gene, 100.0, mismatchDic[gene][0], "", copyNumber, isTruncatedProtein, "|".join(map(str, mismatchDic[gene][-1]))]
+
+            dnaMutationList=["{0}{1}{2}".format(mismatches[k][0], k+1, mismatches[k][1]) for k in sorted(mismatches.keys())]
             outGLine[5]= "|".join(dnaMutationList)
             proteinMutationList = []
             if gene in self.promoters:
                 mismatchDic[gene].append(dnaMutationList)
             else:
-                mismatches = mismatchDic[gene][2]
+                mismatches = proteinMismatches
                 if mismatches:
                     proteinMutationList=["{0}{1}{2}".format(mismatches[k][0], k+1, mismatches[k][1]) for k in mismatches.keys()]
                     mismatchDic[gene].append(proteinMutationList)
@@ -354,10 +275,6 @@ class CResistDB(object):
                 continue
             fo.write(",{0}\n".format(",".join('{0}:{1}'.format(key,val) for key, val in featureProfile.resistanceProfile.items())))
             fog.write("{0}\n".format(",".join(map(str, outGLine))))
-        hasAmpC=False
-        if 'ampC' in exactMatchList1 or ('ampC' in mismatchDic and mismatchDic['ampC'][0]>90):
-            hasAmpC = True
-
 
         fo.write("********* Resistance prediction ********\n")
         for gene in exactMatchList:
@@ -368,6 +285,7 @@ class CResistDB(object):
             featureProfile = self.getResistanceGeneFeature(gene[0])
             if featureProfile == None:
                 continue
+
             if 'TEM' in gene[0] and featureProfile.bushJacobyClass == '2b':
                 isIRT = False
                 if featureProfile.resistanceProfile['co-amoxiclav'] == 'R' and featureProfile.resistanceProfile['piperacillin-tazobactam'] == 'R':
@@ -406,6 +324,7 @@ class CResistDB(object):
                                 thisPromoter = promoter
                             #print diff
                             break
+
                 if thisPromoter == '':
                     #print "This TEM gene does not have an exact match promoter associated"
                     continue
@@ -436,9 +355,16 @@ class CResistDB(object):
                         thisGeneProfile[drug] = 'R'
 
                 fo.write('{0}, promoter {1}, {2}\n'.format(gene[0], thisPromoter, ",".join('{0}:{1}'.format(key, val) for key,val in sorted(thisGeneProfile.items()))))
-                continue
 
-            if gene[0].startswith('ompK'):
+            if gene[0].startswith('TEM'): #if TEM is there, it is intrinsicly resistance to amox_amp
+                resistanceProfile['amoxicillin_ampicillin'] = 'R'
+                fo.write("{0},none,amoxicillin_ampicillin:R\n".format(gene[0]))
+                thisCopyNumber= gene[4]
+                if thisCopyNumber and thisCopyNumber > 2.5: #if the copy number of TEM is >2.5, it is likely to be resistant to co-amoxiclav
+                    resistanceProfile['co-amoxiclav'] = 'R'
+                    fo.write("{0},copyNumber:{1},co-amoxiclav:R\n".format(gene[0], thisCopyNumber))
+                continue
+            if gene[0].startswith('omp'):
                 continue
             if gene[0].startswith('oqx') and species == 'Ecol':
                 fo.write("{0}, none".format(gene[0]))
@@ -492,46 +418,66 @@ class CResistDB(object):
 #5. if gene_name = oqx* is present and query species is "ecol", then call resistant (significance of oqx* presence in klebsiella unclear)
 #
 #fosfomycin: murA (R with Cys115Asp; Asp369Asn; Leu370Ile), uhpT,  glpT, uhpA, uhpB, uhpC, ptsI, cyaA: R with mutations inactivating gene/downregulating expression, important mutations not known
-
+        #mismatchDic a dictionary containing vectors of 
+        #     [matchedGene, dnaChanges, proteinChanges, isTruncated, copyNumber, [contig,start,end]]
         geneListWithMismatch = "\t".join(mismatchDic.keys())
         for gene in mismatchDic:
             featureProfile=  self.getResistanceGeneFeature(gene)
-            if gene in ['ampC_promoter', 'ampCpromoter'] and mismatchDic[gene][0] > 0.9 and hasAmpC:
-                mutationList=set( mismatchDic[gene][1])
-                ampCMutShortList=set(['C110T', 'T120A'])
+            pident, dnaChanges, aaChanges, isTruncated, copyNumber = mismatchDic[gene][0:5]
+            aaChanges_new=set()
+            dnaChanges_new=set() 
+            if aaChanges !=None:
+                for mutation in aaChanges:
+                    aaChanges_new.add("{0}{1}{2}".format(aaChanges[mutation][0], mutation+1, aaChanges[mutation][1]))
+            if dnaChanges !=None:
+                for mutation in dnaChanges:
+                    dnaChanges_new.add("{0}{1}{2}".format(dnaChanges[mutation][0], mutation+1, dnaChanges[mutation][1]))
+            #Processing TEM genes
+            if gene.startswith('TEM'): #if TEM is there, it is intrinsicly resistance to amox_amp
+                resistanceProfile['amoxicillin_ampicillin'] = 'R'
+                fo.write("{0},None,amoxicillin_ampicillin:R\n".format(gene))
+                if copyNumber and copyNumber > 2.5: #if the copy number of TEM is >2.5, it is likely to be resistant to co-amoxiclav
+                    resistanceProfile['co-amoxiclav'] = 'R'
+                    fo.write("{0},copyNumber:{1},co-amoxiclav:R".format(gene, copyNumber))
+            #Processing ampC promoter region
+            if gene in ['ampC_promoter', 'ampCpromoter'] and pident > 0.9 and hasAmpC:
+
+                ampCMutShortList=set(['C110T', 'T120A']) #DNA changes - SNPs
                 ampCMutLongList=set(['C110T', 'T120A', 'G124A', 'G134A', 'G137A', 'T138G', 'C151T', 'C168T', 'C173T', 'T177G', 'A178T', 'G183A', 'G185A', 'C209T', 'T214C', 'C221T'])
-                if len(mutationList & ampCMutShortList)>0:
-                    fo.write("ampC|ampCpromoter,{0:.2f}:{1}, ".format(mismatchDic[gene][0], ":".join('{0}'.format(i) for i in mutationList & ampCMutShortList )))
+                if len(dnaChanges_new & ampCMutShortList)>0:
+                    fo.write("ampC|ampCpromoter,{0:.2f}:{1}, ".format(pident, ":".join('{0}'.format(i) for i in dnaChanges_new & ampCMutShortList )))
                     fo.write("{0}\n".format(",".join('{0}:{1}'.format(key,val) for key, val in featureProfile.resistanceProfile.items())))
-                elif len(mutationList & ampCMutLongList)>0:
-                    fo.write("ampC|ampCpromoter,{0:.2f}:{1}\n".format(mismatchDic[gene][0], ":".join('{0}'.format(i) for i in mutationList & ampCMutLongList )))
+                elif len(dnaChanges_new & ampCMutLongList)>0:
+                    fo.write("ampC|ampCpromoter,{0:.2f}:{1}\n".format(pident, ":".join('{0}'.format(i) for i in dnaChanges_new & ampCMutLongList )))
             if gene == 'folP':
                 pass
             if gene == 'murA':
-                mutationList = set(mismatchDic[gene][1])
                 murAMutList = set(['C115D', 'D369N', 'L370I'] )
-                if len(mutationList & murAMutList) > 0:
-                    fo.write('murA, {0:.2f}:{1}, fosfomycin:R\n'.format(mismatchDic[gene][0], ":".join('{0}'.format(i) for i in mutationList & murAMutList )))
+                if len(aaChanges_new & murAMutList) > 0:
+                    fo.write('murA, {0:.2f}:{1}, fosfomycin:R\n'.format(pident, ":".join('{0}'.format(i) for i in aaChanges_new & murAMutList )))
             if gene in self.chromGenes:
                 nQRDR = 0
                 QRDRMuts = []
-                #print gene, mismatchDic[gene], self.chromGenes[gene]
-                for mutation in mismatchDic[gene][1]:
+                for mutation in aaChanges:
                     if mutation >= self.chromGenes[gene][0] and mutation <= self.chromGenes[gene][1]:
                         nQRDR +=1
-                        QRDRMuts.append("{0}{1}{2}".format(mismatchDic[gene][1][mutation][0], mutation+1, mismatchDic[gene][1][mutation][1]))
+                        QRDRMuts.append("{0}{1}{2}".format(aaChanges[mutation][0], mutation+1, aaChanges[mutation][1]))
+
+                #print gene, mismatchDic[gene], self.chromGenes[gene]
                 nQRDR_parC = 0
                 QRDRMuts_parC = []
                 parC  = None
-                if 'parC_ecol' in mismatchDic:
+                
+                if 'parC_ecol' in mismatchDic and 'ecol' in gene:
                     parC = 'parC_ecol'
-                if 'parC_kpne' in mismatchDic:
+                if 'parC_kpne' in mismatchDic and 'kpne' in gene:
                     parC = 'parC_kpne'
                 if parC   != None:
-                    for mutation in mismatchDic[parC][1]:
+                    thisAAChanges =  mismatchDic[parC][2]
+                    for mutation in thisAAChanges:
                         if mutation >= self.chromGenes[parC][0] and mutation <= self.chromGenes[parC][1]:
                             nQRDR_parC +=1
-                            QRDRMuts_parC.append("{0}{1}{2}".format(mismatchDic[parC][1][mutation][0], mutation+1, mismatchDic[parC][1][mutation][1]))
+                            QRDRMuts_parC.append("{0}{1}{2}".format(thisAAChanges[mutation][0], mutation+1, thisAAChanges[mutation][1]))
                 
                 if 'gyrA' not in gene:
                     if len(QRDRMuts) >0:
@@ -565,12 +511,18 @@ class CResistDB(object):
             elif gene  in exceptionGeneList:
                 #TODO: what kind of profile in here
                 continue
-            elif gene.startswith("ompK"):
-                #TODO
+            elif gene in ['ompK35', 'ompK36']:
+                if isTruncated and hasAmpC : 
+                    fo.write("{0} (truncated), ampC, piperacillin-tazobactam:R\n".format(gene))
+                    resistanceProfile['piperacillin-tazobactam']='R'
                 continue
-            elif gene.startswith("dfr") and mismatchDic[gene][0] > 95:
+            elif gene in ['ompC', 'ompF']:
+                if isTruncated and hasTEM:
+                    fo.write("{0} (truncated), TEM, co-amoxiclav:R\n".format(gene))
+                    resistanceProfile['co-amoxiclav'] = 'R'
+            elif gene.startswith("dfr") and pident > 95:
                 resistanceProfile['trimethoprim']='R'
-                fo.write('{0}, {1:.2f}, trimethoprim:R\n'.format(gene, mismatchDic[gene][0] ))
+                fo.write('{0}, {1:.2f}, trimethoprim:R\n'.format(gene, pident ))
                 otherGene = []
                 for thisGene in exactMatchList1:
                     if 'sul' in thisGene or 'folP' in thisGene:
@@ -582,9 +534,16 @@ class CResistDB(object):
                     resistanceProfile['co-trimoxazole'] = 'R'
                     fo.write('{0}, {1}, co-trimoxazole:R\n'.format(gene, ":".join(otherGene)))
                 continue
-        if species == 'Kpne':
+
+                
+        if species in ['Kpne', 'Koxy']:
             resistanceProfile['ampicillin'] = 'R' #clinically do not use ampicillin for Kpne
-            fo.write('Kpne,  none, ampicillin: R\n')
+            fo.write('{0},  none, ampicillin: R\n'.format(species))
+        if species == 'Paer':
+            resistanceProfile['trimethoprim'] = 'R' #Pseudomonas aeruginosa is intrinsicly resistant to Sulfonamides, trimethoprim, tetracycline, or chloramphenicol due to Lack of uptake resulting from inability of antibiotics to achieve effective intracellular concentrations
+            resistanceProfile['tetracycline'] = 'R'
+            resistanceProfile['chloramphenicol'] = 'R'
+            fo.write('Paer,  none, trimethoprim:R, tetracycline:R, chloramphenicol:R\n')
         fo.close()
         return
 

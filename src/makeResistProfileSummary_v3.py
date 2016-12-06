@@ -13,7 +13,7 @@ import time, datetime
 import os.path
 from optparse import  OptionParser
 
-_baseDir = '/well/gerton/hangphan/MMM/'
+_baseDir = '/well/bag/grn/resistType/'
 
 # Set up logging
 formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
@@ -41,21 +41,21 @@ class makeResistGeneProfiles(object):
         header = ""
         
         if self.modePred == MODE1:
-            with open("{0}/resources/drugnamesInResistDB.txt".format(_baseDir), "r") as f:
+            with open("{0}/resistDB/drugnamesInResistDB.txt".format(_baseDir), "r") as f:
                 for idx, line in enumerate(f):
                     self.drugDict[line.strip()] = 1 + idx
                     self.drugList.append( line.strip())
             self.header = ",".join(["sampleID"] + self.drugList)
 
         if self.modePred == MODE3:
-            with open("{0}/HICF/jacResults_header.txt".format(_baseDir), "r") as f:
+            with open("{0}/resistDB/jacResults_header.txt".format(_baseDir), "r") as f:
                 for idx, line in enumerate(f):
                     self.drugDict[line.strip()] = 1 + idx
                     self.drugList.append( line.strip())
             self.header = ",".join(["sampleID"] + self.drugList)
     
         if self.modePred == MODE2:
-            with open("{0}/resources/headerForHICF.csv".format(_baseDir), "r") as f:
+            with open("{0}/resistDB/headerForHICF.csv".format(_baseDir), "r") as f:
                 header = f.readlines()[0]
                 cols = header.strip().split(",")
                 for idx, item in enumerate(cols):
@@ -106,7 +106,7 @@ class makeResistGeneProfiles(object):
             exactMatch = 0
             inexactMatch = 0
             while n < len(lines):
-                line = lines[n].replace(",notes", "_notes")
+                line = lines[n].replace("sion,notes", "sion_notes").replace(":R,notes", ":R_notes").replace(":S,notes", ":S_notes")
                 n+=1
                 if line.startswith("#"):
                     continue
@@ -129,7 +129,7 @@ class makeResistGeneProfiles(object):
                             exactList[geneName].append(line.strip())
                         
                 if inexactMatch:
-                    line = lines[n].replace(",notes", "_notes")
+                    line = lines[n].replace("sion,notes", "sion_notes").replace(":R,notes", ":R_notes").replace(":S,notes", ":S_notes")
                     if "* Resistance prediction" in line:
                         break
                     cols = line.strip().rstrip().split(",")
@@ -142,7 +142,8 @@ class makeResistGeneProfiles(object):
 
         resistanceProfile = {}
         for line in lines[n:]:
-            line = line.replace(",notes", "_notes")
+            line = lines[n].replace("sion,notes", "sion_notes").replace(":R,notes", ":R_notes").replace(":S,notes", ":S_notes")
+
             cols = line.strip().replace(", possible", "-possible").split(",")
             if len(cols) <=2:
                 continue

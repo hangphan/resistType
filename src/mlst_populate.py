@@ -190,7 +190,8 @@ class KpneMLST(PubMLST):
 		self.name="Klebsiella pneumoniae"
 		self.geneSet=["gapA","infB","mdh","pgi","phoE","rpoB","tonB"]
 		self.alleleUrl="http://bigsdb.web.pasteur.fr/perl/bigsdb/bigsdb.pl?db=pubmlst_klebsiella_seqdef_public&page=downloadAlleles&locus={0}"
-		self.mlstProfileUrl="http://bigsdb.web.pasteur.fr/perl/bigsdb/bigsdb.pl?db=pubmlst_klebsiella_seqdef_public&page=downloadProfiles&scheme_id=1"
+		self.mlstProfileUrl="http://bigsdb.pasteur.fr/perl/bigsdb/bigsdb.pl?db=pubmlst_klebsiella_seqdef_public&page=downloadProfiles&scheme_id=1"
+		
 		PubMLST.__init__(self)
 
 class KoxyMLST(PubMLST):
@@ -256,6 +257,10 @@ class CfreMLST(PubMLST):
 		self.alleleUrl="http://pubmlst.org/perl/bigsdb/bigsdb.pl?db=pubmlst_cfreundii_seqdef&page=downloadAlleles&locus={0}"
 		self.mlstProfileUrl="http://pubmlst.org/perl/bigsdb/bigsdb.pl?db=pubmlst_cfreundii_seqdef&page=downloadProfiles&scheme_id=1"
 		PubMLST.__init__(self)
+a=KpneMLST()
+a.run()
+a.store()
+
 a=KoxyMLST()
 a.run()
 a.store()
@@ -272,9 +277,6 @@ a=CdifMLST()
 a.run()
 a.store()
 a=SpneMLST()
-a.run()
-a.store()
-a=KpneMLST()
 a.run()
 a.store()
 a=EcloMLST()
