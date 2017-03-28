@@ -1,0 +1,38 @@
+================================================================
+Program: CD-HIT, V4.6, May 01 2015, 11:35:12
+Command: ../bin/cd-hit-est -i allAlleles.fa -o temp90.fa -c
+         0.90 -n 8 -aS 0.8 -g 1 -p 1 -d 0
+
+Started: Wed Jan 25 15:24:17 2017
+================================================================
+                            Output                              
+----------------------------------------------------------------
+total seq: 30934
+longest and shortest : 646 and 249
+Total letters: 14501454
+Sequences have been sorted
+
+Approximated minimal memory consumption:
+Sequence        : 18M
+Buffer          : 1 X 12M = 12M
+Table           : 1 X 1M = 1M
+Miscellaneous   : 0M
+Total           : 32M
+
+Table limit with the given memory limit:
+Max number of representatives: 1327876
+Max number of word counting entries: 95880302
+
+comparing sequences from          0  to      30934
+....................    10000  finished        115  clusters
+....................    20000  finished        230  clusters
+....................    30000  finished        352  clusters
+
+    30934  finished        390  clusters
+
+Apprixmated maximum memory consumption: 34M
+writing new database
+writing clustering information
+program completed !
+
+Total CPU time 10.43
