@@ -106,7 +106,9 @@ class makeResistGeneProfiles(object):
             return None, None, None
         exactList={}
         inexactList={}
+        print resultFile
         with open(resultFile, "r") as f:
+
             lines = f.readlines()
             n=0
             exactMatch = 0
@@ -150,11 +152,14 @@ class makeResistGeneProfiles(object):
         sureResistanceTerms=["R", "R(MIC>8)"]
         for line in lines[n:]:
             cols = line.strip().replace(", possible", "-possible").split(",")
-            print line
+            #print line
             if len(cols) <=2:
                 continue
-            print cols
+            #print cols
+            if ":" not in cols[2]:
+                continue
             for x in cols[2:]:
+                
                 x = x.rstrip().strip()
                 y = x.split(":")
 
