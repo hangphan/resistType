@@ -41,11 +41,12 @@ class MLSTFetch:
 	def readProfile(self,headersize=0):
 		if not self.mlstpost:
 			profile=StringIO.StringIO(self.extractTab(urllib.urlopen(self.mlstProfileUrl).read()))
+
 		else:
 			profile=StringIO.StringIO(self.extractTab(urllib.urlopen(self.mlstProfileUrl,self.mlstpost).read()))
+
 		profile=[i.strip().split() for i in profile]
 		order=self.getOrder(profile[0])
-
 		res_profile=[]
 
 		for i in profile[headersize:]:
@@ -155,7 +156,20 @@ class CdifMLST(PubMLST):
 		self.geneSet=["adk","atpA","dxr","glyA","recA","sodA","tpi"]
 		self.alleleUrl="http://pubmlst.org/perl/bigsdb/bigsdb.pl?db=pubmlst_cdifficile_seqdef&page=downloadAlleles&locus={0}"
 		self.mlstProfileUrl="http://pubmlst.org/perl/bigsdb/bigsdb.pl?db=pubmlst_cdifficile_seqdef&page=downloadProfiles&scheme_id=1"
+		self.mlstProfileUrl="https://pubmlst.org/data/profiles/cdifficile.txt"
 		PubMLST.__init__(self)
+		
+
+class SsuiMLST(PubMLST):
+	def __init__(self):
+		self.code="Ssui"
+		self.name="Streptococcus suis"
+		self.geneSet=["aroA","cpn60","dpr","gki","mutS","recA","thrA"]
+		self.alleleUrl="http://pubmlst.org/perl/bigsdb/bigsdb.pl?db=pubmlst_ssuis_seqdef&page=downloadAlleles&locus={0}"
+		self.mlstProfileUrl="http://pubmlst.org/perl/bigsdb/bigsdb.pl?db=pubmlst_ssuis_seqdef&page=downloadProfiles&scheme_id=1"
+		self.mlstProfileUrl="https://pubmlst.org/data/profiles/ssuis.txt"
+		PubMLST.__init__(self)
+
 		
 class SaurMLST(MLSTNet):
 	def __init__(self):
@@ -182,6 +196,7 @@ class SpneMLST(PubMLST):
 		self.geneSet=["aroE","gdh","gki","recP","spi","xpt","ddl"]
 		self.alleleUrl="http://pubmlst.org/perl/bigsdb/bigsdb.pl?db=pubmlst_spneumoniae_seqdef&page=downloadAlleles&locus={0}"
 		self.mlstProfileUrl="http://pubmlst.org/perl/bigsdb/bigsdb.pl?db=pubmlst_spneumoniae_seqdef&page=downloadProfiles&scheme_id=1"
+		self.mlstProfileUrl="https://pubmlst.org/data/profiles/spneumoniae.txt"
 		PubMLST.__init__(self)
 	
 class KpneMLST(PubMLST):
@@ -191,6 +206,7 @@ class KpneMLST(PubMLST):
 		self.geneSet=["gapA","infB","mdh","pgi","phoE","rpoB","tonB"]
 		self.alleleUrl="http://bigsdb.web.pasteur.fr/perl/bigsdb/bigsdb.pl?db=pubmlst_klebsiella_seqdef_public&page=downloadAlleles&locus={0}"
 		self.mlstProfileUrl="http://bigsdb.pasteur.fr/perl/bigsdb/bigsdb.pl?db=pubmlst_klebsiella_seqdef_public&page=downloadProfiles&scheme_id=1"
+
 		
 		PubMLST.__init__(self)
 
@@ -201,6 +217,7 @@ class KoxyMLST(PubMLST):
 		self.geneSet=["gapA","infB","mdh","pgi","phoE","rpoB","tonB"]
 		self.alleleUrl="http://pubmlst.org/perl/bigsdb/bigsdb.pl?db=pubmlst_koxytoca_seqdef&page=downloadAlleles&locus={0}"
 		self.mlstProfileUrl="http://pubmlst.org/perl/bigsdb/bigsdb.pl?db=pubmlst_koxytoca_seqdef&page=downloadProfiles&scheme_id=1"
+		self.mlstProfileUrl="https://pubmlst.org/data/profiles/koxytoca.txt"
 		PubMLST.__init__(self)
 
 class EcloMLST(PubMLST):
@@ -210,6 +227,7 @@ class EcloMLST(PubMLST):
 		self.geneSet=["dnaA","fusA","gyrB","leuS","pyrG","rplB","rpoB"]
 		self.alleleUrl="http://pubmlst.org/perl/bigsdb/bigsdb.pl?db=pubmlst_ecloacae_seqdef&page=downloadAlleles&locus={0}"
 		self.mlstProfileUrl="http://pubmlst.org/perl/bigsdb/bigsdb.pl?db=pubmlst_ecloacae_seqdef&page=downloadProfiles&scheme_id=1"
+		self.mlstProfileUrl="https://pubmlst.org/data/profiles/ecloacae.txt"
 		PubMLST.__init__(self)
 
 class PaerMLST(PubMLST):
@@ -219,6 +237,8 @@ class PaerMLST(PubMLST):
 		self.geneSet=["acs","aro","gua","mut","nuo","pps","trp"]
 		self.alleleUrl="http://pubmlst.org/perl/bigsdb/bigsdb.pl?db=pubmlst_paeruginosa_seqdef&page=downloadAlleles&locus={0}"
 		self.mlstProfileUrl="http://pubmlst.org/perl/bigsdb/bigsdb.pl?db=pubmlst_paeruginosa_seqdef&page=downloadProfiles&scheme_id=1"
+
+		self.mlstProfileUrl="https://pubmlst.org/data/profiles/paeruginosa.txt"
 		PubMLST.__init__(self)
 
 class SentMLST(MLSTWarwick):
@@ -248,6 +268,7 @@ class NgonMLST(PubMLST):
 		self.geneSet=["abcZ","adk","aroE","fumC","gdh","pdhC","pgm"]
 		self.alleleUrl="http://pubmlst.org/perl/bigsdb/bigsdb.pl?db=pubmlst_neisseria_seqdef&page=downloadAlleles&locus={0}"
 		self.mlstProfileUrl="http://pubmlst.org/perl/bigsdb/bigsdb.pl?db=pubmlst_neisseria_seqdef&page=downloadProfiles&scheme_id=1"
+		self.mlstProfileUrl="https://pubmlst.org/data/profiles/neisseria.txt"
 		PubMLST.__init__(self)
 class CfreMLST(PubMLST):
 	def __init__(self):
@@ -256,11 +277,33 @@ class CfreMLST(PubMLST):
 		self.geneSet=["aspC","clpX","fadD","mdh","arcA","dnaG","lysP"]
 		self.alleleUrl="http://pubmlst.org/perl/bigsdb/bigsdb.pl?db=pubmlst_cfreundii_seqdef&page=downloadAlleles&locus={0}"
 		self.mlstProfileUrl="http://pubmlst.org/perl/bigsdb/bigsdb.pl?db=pubmlst_cfreundii_seqdef&page=downloadProfiles&scheme_id=1"
+		self.mlstProfileUrl="https://pubmlst.org/data/profiles/cfreundii.txt"
 		PubMLST.__init__(self)
-a=KpneMLST()
+class CjejMLST(PubMLST):
+	def __init__(self):
+		self.code="Cjej"
+		self.name="Campylobacter jejuni"
+		self.geneSet=["aspA","glnA","gltA","glyA","pgm","tkt","uncA"]
+
+		self.alleleUrl="http://pubmlst.org/perl/bigsdb/bigsdb.pl?db=pubmlst_campylobacter_seqdef&page=downloadAlleles&locus={0}"
+		self.mlstProfileUrl="http://pubmlst.org/perl/bigsdb/bigsdb.pl?db=pubmlst_campylobacter_seqdef&page=downloadProfiles&scheme_id=1"
+		self.mlstProfileUrl="https://pubmlst.org/data/profiles/campylobacter.txt"
+		PubMLST.__init__(self)
+a=SsuiMLST()
 a.run()
 a.store()
 
+a=CdifMLST()
+a.run()
+a.store()
+
+
+a=KpneMLST()
+a.run()
+a.store()
+a=CjejMLST()
+a.run()
+a.store()
 a=KoxyMLST()
 a.run()
 a.store()
@@ -271,9 +314,6 @@ a=CfreMLST()
 a.run()
 a.store()
 a=SaurMLST()
-a.run()
-a.store()
-a=CdifMLST()
 a.run()
 a.store()
 a=SpneMLST()
