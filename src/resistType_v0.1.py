@@ -209,13 +209,12 @@ class ResistType(object):
         '''
         make temporary reference file which does not contain the ones in candidateList
         '''
+
         fullRecords =SeqIO.index(self.resistGeneFasta, "fasta")
-        tempRefFile = self.outputDir + "/reference.fa"
-        return tempRefFile
+        tempRefFile = self.refFile
         nSeq=""
         for i in range(100):
             nSeq+= "N"
-
         
         sequenceInRef = set()
         with open(tempRefFile, "w") as fo:
@@ -236,6 +235,7 @@ class ResistType(object):
                         randSeq = str(contigs[randContigID].seq)[randContigStart: randContigStart + 2000]
                         randContigID = "REF_" + randContigID + "_" + str(randContigStart)
                         fo.write(">{0}\n{1}{2}{1}\n".format(randContigID, nSeq, randSeq, nSeq ))
+
 
             for record in fullRecords:
                 if self.refid == KPNE and 'ecol' in record:

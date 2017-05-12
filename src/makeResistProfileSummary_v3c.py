@@ -13,7 +13,7 @@ import time, datetime
 import os.path
 from optparse import  OptionParser
 
-_baseDir = '/well/bag/grn/resistType/'
+_baseDir = '/well/bag/hangphan/resistType/'
 
 # Set up logging
 formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")

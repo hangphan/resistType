@@ -199,8 +199,11 @@ class CResistDB(object):
         fo= open(foN, "w")
         exactMatchList = sorted(exactMatchList)
         exactMatchList1 = [thisGene[0] for thisGene in exactMatchList]
+        
         #TODO: need to check if have duplicated match 
         hasTEM=0
+        TEMgene=[]
+        temCpn=0 #TEM copy number
         hasAmpC=0
         fo.write("#Antibiotic resistance for {0}\n".format(sampleName))
         fo.write("********** List of presence genes: ***********\n")
@@ -214,6 +217,9 @@ class CResistDB(object):
             fo.write("\t{0}".format(gene[0]))
             if gene[0].startswith('TEM'):
                 hasTEM=1
+                if gene[4] and gene[4] > temCpn:
+                    TEMgene=gene[0]
+                    temCpn = gene[4]
             if gene[0].startswith('ampC'):
                 hasAmpC=1
             #outGline: resistancePredictionProgram, sampleName, geneName, sequence coverage, percentIdentity, dnaMismatches(for exact match, only dnaMatch or protein match), coverage, protein truncated, comments- mapped contigs
@@ -246,6 +252,9 @@ class CResistDB(object):
 
             if gene.startswith('TEM') and pident>0.95 and not isTruncatedProtein:
                 hasTEM=1
+                if copyNumber and float(copyNumber) > temCpn:
+                    TEMgene= gene
+                    temCpn = float(copyNumber)
             if gene.startswith('ampC') and pident >0.95 and not isTruncatedProtein:
                 hasAmpC=1
 
@@ -277,6 +286,17 @@ class CResistDB(object):
             fog.write("{0}\n".format(",".join(map(str, outGLine))))
 
         fo.write("********* Resistance prediction ********\n")
+        geneList=",".join(exactMatchList1) + "," + ",".join(mismatchDic.keys()) 
+
+        if hasTEM:
+            resistanceProfile['amoxicillin_ampicillin'] = 'R'
+            fo.write("{0},none,amoxicillin_ampicillin:R\n".format(TEMgene))
+            
+            if temCpn > 2.5: #if the copy number of TEM is >2.5, it is likely to be resistant to co-amoxiclav
+                resistanceProfile['co-amoxiclav'] = 'R'
+                fo.write("{0},copyNumber:{1},co-amoxiclav:R\n".format(TEMgene, temCpn))
+
+
         for gene in exactMatchList:
             if gene[0] in self.chromGenes:
                 continue
@@ -327,7 +347,7 @@ class CResistDB(object):
 
                 if thisPromoter == '':
                     #print "This TEM gene does not have an exact match promoter associated"
-                    continue
+                    tempVar=0
                 if thisPromoter == 'P3':
                     if not isIRT: 
                         resistanceProfile['amoxicillin_ampicillin'] = 'R'
@@ -357,12 +377,6 @@ class CResistDB(object):
                 fo.write('{0}, promoter {1}, {2}\n'.format(gene[0], thisPromoter, ",".join('{0}:{1}'.format(key, val) for key,val in sorted(thisGeneProfile.items()))))
 
             if gene[0].startswith('TEM'): #if TEM is there, it is intrinsicly resistance to amox_amp
-                resistanceProfile['amoxicillin_ampicillin'] = 'R'
-                fo.write("{0},none,amoxicillin_ampicillin:R\n".format(gene[0]))
-                thisCopyNumber= gene[4]
-                if thisCopyNumber and thisCopyNumber > 2.5: #if the copy number of TEM is >2.5, it is likely to be resistant to co-amoxiclav
-                    resistanceProfile['co-amoxiclav'] = 'R'
-                    fo.write("{0},copyNumber:{1},co-amoxiclav:R\n".format(gene[0], thisCopyNumber))
                 continue
             if gene[0].startswith('omp'):
                 continue

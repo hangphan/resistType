@@ -135,19 +135,25 @@ CRIPTDIR/../bin/samtools sort -n $BAMFILE tmpDir/$SAMPLEID.temp
 
 fi
 
+if [ -s fastq/$SAMPLEID/reads1.fq.gz ]
+then
 #trimming read adaptors if not trimmed yet
-sh runBbduk.sh $SAMPLEID $SCRIPTDIR
+    sh runBbduk.sh $SAMPLEID $SCRIPTDIR
+fi
 
 if [ ! $REFID ]
 then 
     REFID=Ente #fake refid
 fi
 
-rm resistType/$SAMPLEID/ref*
+if [ ! $CONTIG ]
+then
+    CONTIG=spadesOutput/$SAMPLEID/contigs.fasta
+fi
 
 if [ ! $METAG ] #not running metagenomic based typing
 then
-    if [ ! -s spadesOutput/$SAMPLEID/contigs.fasta ]
+    if [ ! -s $CONTIG ]
     then
 	spadesPath=$SCRIPTDIR/../bin/spades.py
 	spadesPath=spades.py
@@ -159,18 +165,16 @@ then
 	mv $outDir/spades.log spadesOutput/$SAMPLEID
 	rm -rf $outDir
     fi
-    if [ -s spadesOutput/$SAMPLEID/contigs.fasta ]
+    
+    if [ -s $CONTIG ] #if WGS spades assembly process successfully generated assembly, do this
     then
-	python $SCRIPTDIR/resistType_v0.1.py -s $SAMPLEID -r $REFID
-	sh runISFinder.sh $SAMPLEID
-	sh runPlasmidFinder.sh $SAMPLEID
-	sh runMLST.sh $SAMPLEID
-    else
+	python $SCRIPTDIR/resistType_v0.1.py -s $SAMPLEID -r $REFID -c $CONTIG
+	sh runMLST.sh $SAMPLEID  $CONTIG
+	sh runISFinder.sh $SAMPLEID $CONTIG
+	sh runPlasmidFinder.sh $SAMPLEID $CONTIG
+    else # if spades failed, 
 	echo SPAdes assembly failed, running resistance prediction on metagenomics mode no copy number estimation
-	python $SCRIPTDIR/resistType_v0.1.py -s $SAMPLEID -m 1
-	sh runMLST.sh $SAMPLEID
-	sh runISFinder.sh $SAMPLEID
-	sh runPlasmidFinder.sh $SAMPLEID
+	python $SCRIPTDIR/resistType_v0.1.py -s $SAMPLEID -m 1 
     fi
 else
     python $SCRIPTDIR/resistType_v0.1.py -s $SAMPLEID -m 1
