@@ -392,28 +392,17 @@ class ResistType(object):
                 
             if sseqid not in contigs_genes:
                 contigs_genes[sseqid] = [newVector]
-                if "aad" in qseqid:
-                    print "xxx", line
-
             else:
-
-
                 #update partial matching of contigs to genes based on the overlap of gene matching to contigs.
                 isOverlap = 0
                 for idx, item in enumerate(contigs_genes[sseqid]):
                     overlapSize = min(max(send, sstart), max(item[-2], item[-1]))-max(min(sstart, send), min(item[-1],item[-2]))
                     if  overlapSize > qlen * 0.5 : #if is overlap
                         isOverlap =1
-                        if "aad" in qseqid:
-                            print "xxz", qseqid, item
-                            print line
-
-
                         if newVector[1] > contigs_genes[sseqid][idx][1]:
                             overlapGeneSet.add(contigs_genes[sseqid][idx][0])
                             contigs_genes[sseqid][idx] = newVector
-                        elif newVector[1] == contigs_genes[sseqid][idx][1] and qseqid not in contigs_genes[sseqid][idx]:
-                            contigs_genes[sseqid][idx].extend(newVector)
+                        elif newVector[1] == contigs_genes[sseqid][idx][1] and qseqid not in contigs_genes[sseqid][idx]:                            contigs_genes[sseqid][idx].extend(newVector)
                         else:
                             overlapGeneSet.add(qseqid)
 
@@ -455,9 +444,6 @@ class ResistType(object):
         for contig in contigs_genes:
 
             for hit in contigs_genes[contig]:
-                print hit
-                if "aad" in hit[0]:
-                    print hit
                 [gene, pident, dnaMismatches, sseq, qseq] = hit[:5]
                 isTruncated = hit[5]
                 if isTruncated > 0:
