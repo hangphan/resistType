@@ -14,17 +14,17 @@ cp $SCRIPTDIR/runBbduk.sh $studyName
 echo -e $"#!/bin/bash\n#$ -cwd\n#$ -V" >$studyName/runMLST.sh
 SCRIPTDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 echo "SCRIPTDIR=$SCRIPTDIR" >>$studyName/runMLST.sh
-echo "python $SCRIPTDIR/mlstTyping.py -s $sampleid -c spadesOutput/$sampleid/conetigs.fasta" >>$studyName/runMLST.sh
+echo "python $SCRIPTDIR/mlstTyping.py -s $sampleid -c spadesOutput/$sampleid/contigs.fasta" >>$studyName/runMLST.sh
 
 echo -e $"#!/bin/bash\n#$ -cwd\n#$ -V" >$studyName/runISFinder.sh
 SCRIPTDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 echo "SCRIPTDIR=$SCRIPTDIR" >>$studyName/runISFinder.sh
-echo "python $SCRIPTDIR/ISFinder.py -s $sampleid -c spadesOutput/$sampleid/conetigs.fasta" >>$studyName/runISFinder.sh
+echo "python $SCRIPTDIR/ISFinder.py -s $sampleid -c spadesOutput/$sampleid/contigs.fasta" >>$studyName/runISFinder.sh
 
 echo -e $"#!/bin/bash\n#$ -cwd\n#$ -V" >$studyName/runPlasmidFinder.sh
 SCRIPTDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 echo "SCRIPTDIR=$SCRIPTDIR" >>$studyName/runPlasmidFinder.sh
-echo "python $SCRIPTDIR/plasmidFinder.py -s $sampleid -c spadesOutput/$sampleid/conetigs.fasta" >>$studyName/runPlasmidFinder.sh
+echo "python $SCRIPTDIR/plasmidFinder.py -s $sampleid -c spadesOutput/$sampleid/contigs.fasta" >>$studyName/runPlasmidFinder.sh
 
 
 
