@@ -1,3 +1,5 @@
+/well/bag/hangphan/resistType/src
+-bash-4.1$ cat makeStart.sh
 #!/bin/bash
 #Please change the header here to suit your cluster job submission system
 studyName=$1
@@ -29,5 +31,4 @@ echo "python $SCRIPTDIR/plasmidFinder.py -s $sampleid -c spadesOutput/$sampleid/
 
 
 cp $SCRIPTDIR/submitJobs.sh $studyName
-
 
