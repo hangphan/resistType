@@ -97,7 +97,7 @@ class ResistType(object):
         self.outFastaFile = self.outputDir + '/outMatchedSequences.fa'
         self.outFastaFileRefined = self.outputDir + '/outRefinedMatchedSeqs.fa'
         if not os.path.exists(self.outputDir):
-            os.system("mkdir -p {0}".self.outputDir)
+            os.system("mkdir -p {0}".format(self.outputDir))
  
 
         #set resources 
@@ -211,6 +211,7 @@ class ResistType(object):
         '''
         fullRecords =SeqIO.index(self.resistGeneFasta, "fasta")
         tempRefFile = self.outputDir + "/reference.fa"
+        return tempRefFile
         nSeq=""
         for i in range(100):
             nSeq+= "N"
@@ -307,7 +308,6 @@ class ResistType(object):
             geneLen = len(resistGenes[qseqid])
             sprot = ""
             qprot = ""
-
             if  pident < 90 or  qend - qstart + 1 < qlen * 0.9: #filter by length of alignment
                 continue
             isTruncated = 0
@@ -384,21 +384,31 @@ class ResistType(object):
                 else:
                     sVector = [sseqid, PARTIALMATCH, pident, dnaMismatches, newSstart, newSend, sprot, newSseq, newQseq]
 
-        
             if qseqid not in genes_contigs:
                 genes_contigs[qseqid] = [sVector]
             else:
                 genes_contigs[qseqid].append(sVector)
+
                 
             if sseqid not in contigs_genes:
                 contigs_genes[sseqid] = [newVector]
+                if "aad" in qseqid:
+                    print "xxx", line
+
             else:
+
+
                 #update partial matching of contigs to genes based on the overlap of gene matching to contigs.
                 isOverlap = 0
                 for idx, item in enumerate(contigs_genes[sseqid]):
                     overlapSize = min(max(send, sstart), max(item[-2], item[-1]))-max(min(sstart, send), min(item[-1],item[-2]))
                     if  overlapSize > qlen * 0.5 : #if is overlap
                         isOverlap =1
+                        if "aad" in qseqid:
+                            print "xxz", qseqid, item
+                            print line
+
+
                         if newVector[1] > contigs_genes[sseqid][idx][1]:
                             overlapGeneSet.add(contigs_genes[sseqid][idx][0])
                             contigs_genes[sseqid][idx] = newVector
@@ -408,7 +418,9 @@ class ResistType(object):
                             overlapGeneSet.add(qseqid)
 
                 if isOverlap ==0:
+
                     contigs_genes[sseqid].append(newVector)
+
             continue
 
         fin.close()
@@ -416,12 +428,16 @@ class ResistType(object):
         fo =  open(self.outFastaFileRefined, "w")
         #write matched sequences to file
         for gene in sorted(genes_contigs.keys()):
-            
             items = genes_contigs[gene] #contain vector of [contigName, matchStatus, pident, dnaMismatches, sstart, send, sprot, qseq, sseq]
             for item in items:
-                contigName, matchStatus, pident, dnaMismatches, sstart, send, sprot, qseq, sseq = item
+                contigName, matchStatus, pident, dnaMismatches, sstart, send, sprot, sseq, qseq = item
+                mutationLine=""
+                if dnaMismatches:
+                    mutationList = ["{0}{1}{2}".format(dnaMismatches[k][0], k+1, dnaMismatches[k][1]) for k in dnaMismatches.keys()]
+                    mutationLine = "|".join(mutationList)
+                infos=":".join(map(str, [contigName, matchStatus,pident,mutationLine,sstart,send, sprot, qseq]))
                 if matchStatus == EXACTMATCH:
-                    fo.write(">{0}\texactMatch:mappedContig:{1}\n{2}\n".format(gene, ":".join(map(str, item[:-2]) ), sseq))
+                    fo.write(">{0}\texactMatch:mappedContig:{1}\n{2}\n".format(gene, infos, sseq))
                     self.resistGenesMatch.append([gene, "dnaMatch",pident, dnaMismatches,None, [contigName, sstart, send]])
                     candidateList.add(self.geneClusterMap[gene])
                 if matchStatus == PROTMATCH:
@@ -430,7 +446,7 @@ class ResistType(object):
                         if thisGene != gene and genes_contigs[thisGene][0][5] == send and genes_contigs[thisGene][0][1] == EXACTMATCH:
                             duplicate = 1
                     if duplicate == 0:
-                        fo.write(">{0}\tproteinLevelMatch:mappedContig:{1}\n{2}\n".format(gene, ":".join(map(str, item[:-2]) ),sseq))
+                        fo.write(">{0}\tproteinLevelMatch:mappedContig:{1}\n{2}\n".format(gene, infos, sseq))
                         self.resistGenesMatch.append([gene, "protMatch", pident, dnaMismatches, None, [contigName, sstart, send]])
                         candidateList.add(self.geneClusterMap[gene])
 
@@ -439,7 +455,9 @@ class ResistType(object):
         for contig in contigs_genes:
 
             for hit in contigs_genes[contig]:
-
+                print hit
+                if "aad" in hit[0]:
+                    print hit
                 [gene, pident, dnaMismatches, sseq, qseq] = hit[:5]
                 isTruncated = hit[5]
                 if isTruncated > 0:
@@ -454,11 +472,18 @@ class ResistType(object):
                 isTruncatedProtein=0
                 items = genes_contigs[gene]
                 proteinMismatches=None
-                for item in items:
-                    contigName, sstart, send = item[0], item[4], item[5]
+                for item in items: #note: sseq is the contig sequence in the assembly, and qseq is the DNA sequence in the database. 
+                    contigName, matchStatus, pident, dnaMismatches, sstart, send, sprot, sseq, qseq = item
+                    mutationLine=""
+                    if dnaMismatches:
+                        mutationList = ["{0}{1}{2}".format(dnaMismatches[k][0], k+1, dnaMismatches[k][1]) for k in dnaMismatches.keys()]
+                        mutationLine = "|".join(mutationList)
+                        
+                    infos=":".join(map(str, [contigName, matchStatus,pident,mutationLine,sstart,send, sprot, qseq]))
+
                     #if is promoter of there is gap in the alignment, indication of frameshift mutations, no point to translate and compare
                     if gene in self.promoters or "-" in sseq or "-" in qseq: 
-                        fo.write(">{0}\tcloseHit:mappedContig:{1}\t{2}\n{3}\n".format(gene, ":".join(map(str, item[:-2]) ), item[-1], item[-2]))   
+                        fo.write(">{0}\tcloseHit:mappedContig:{1}\n{2}\n".format(gene, infos, sseq))   
                         if gene not in self.promoters:
                             sprot = str(Seq(str(sseq).replace("-", "")).translate(table="Bacterial"))
                             #print sprot
@@ -479,8 +504,9 @@ class ResistType(object):
                             if sprot.index('*')< len(sprot)-1:
                                 isTruncatedProtein = 1
                         if isInProtSeq != None:
+                            infos=":".join(map(str, [contigName, matchStatus,pident,mutationLine,sstart,send, sprot]))
                             self.resistGenesMatch.append([isInProtSeq, "protMatch", None, None, None, [contigName, sstart, send]]) 
-                            fo.write(">{0}\tproteinLevelMatch1:mappedContig:{1}\t{2}\n{3}\n".format(isInProtSeq, ":".join(map(str, item[:-2]) ), item[-1], item[-2]))
+                            fo.write(">{0}\tproteinLevelMatch1:mappedContig:{1}\n{2}\n".format(isInProtSeq, infos, sseq))
                             continue
                         proteinMismatches= self.getMismatches(gene, qseq, sseq, mode=0, isDNA=0)
                         if dnaMismatches == None:
@@ -488,10 +514,10 @@ class ResistType(object):
                             continue
                         if proteinMismatches==None or len(proteinMismatches.keys()) == 0:
                             self.resistGenesMatch.append([gene, "protMatch", pident, dnaMismatches, None, [contigName, sstart, send]])
-                            fo.write(">{0}\tproteinLevelMatch:mappedContig:{1}\t{2}\n{3}\n".format(gene, ":".join(map(str, item[:-2]) ), item[-1], item[-2]))  
+                            fo.write(">{0}\tproteinLevelMatch:mappedContig:{1}\n{2}\n".format(gene, infos, sseq))
                         else:
                             self.resistGenesMismatch[gene] = [pident, dnaMismatches, proteinMismatches, isTruncatedProtein, None, [contigName, sstart, send]]
-                            fo.write(">{0}\tcloseHit:mappedContig:{1}\t{2}\n{3}\n".format(gene, ":".join(map(str, item[:-2]) ), item[-1], item[-2]))  
+                            fo.write(">{0}\tcloseHit:mappedContig:{1}\n{2}\n".format(gene, infos, sseq))
                 candidateList.add(self.geneClusterMap[gene])
         self.estimateCopyNumber()
         
@@ -710,9 +736,17 @@ class ResistType(object):
                         proteinMismatches= self.getMismatches(qseqid, qseq, sseq, mode=0, isDNA=0)
                         isTruncatedProtein = 0
                         sprot = str(Seq(sseq.replace("-","")).translate(table="Bacterial"))
+                        
+                        mutationLine=""
+                        if dnaMismatches:
+                            mutationList = ["{0}{1}{2}".format(dnaMismatches[k][0], k+1, dnaMismatches[k][1]) for k in dnaMismatches.keys()]
+                            mutationLine="|".join(mutationList)
+
+
                         if "*" in sprot:
                             if sprot.index("*") < len(sprot) -1:
                                 isTruncatedProtein =1
+                        
 
 
                         if len(dnaMismatches) ==0 or not dnaMismatches:
@@ -720,7 +754,8 @@ class ResistType(object):
                             hitGenes.append(cols[0])
                             if cols[0] not in self.resistGenesMatch:
                                 self.resistGenesMatch.append([qseqid, "dnaMatch", 100.0, dnaMismatches, copyNumber, ['mapBased', str(thisDP), str(self.meanDP)]])
-                            fo.write(">{0}\texactHit:{1}\n{2}\n".format(cols[0], records1[gene].description, ssequence))
+                            infos= ":".join(map(str, ['mapBased', pident,mutationLine,sprot, sseq]))
+                            fo.write(">{0}\texactHit:{1}\n{2}\n".format(cols[0], infos, qseq))
                             break
                         else:
                             if len(proteinMismatches) ==0:
@@ -728,7 +763,8 @@ class ResistType(object):
                                 hitGenes.append(cols[0])
                                 if cols[0] not in self.resistGenesMatch:
                                     self.resistGenesMatch.append([qseqid, "protMatch", pident, dnaMismatches, copyNumber, ['mapBased', str(thisDP), str(self.meanDP)]])
-                                    fo.write(">{0}\tproteinMatched1:{1}\n{2}\n".format(cols[0], records1[gene].description, ssequence))
+                                infos= ":".join(map(str, ['mapBased', pident,mutationLine,sprot, sseq]))
+                                fo.write(">{0}\tproteinMatched1:{1}\n{2}\n".format(cols[0], infos, qseq))
                                 break
                         
                             tempVal = float(qlen - len(dnaMismatches)) / qlen 
@@ -746,15 +782,18 @@ class ResistType(object):
                             continue
                         if maxIdent*100 <92 :
                             continue
-                        fo.write(">{0}\tcloseHit:{1}\t{2}\n{3}\n".format("|".join(closestHit), records1[gene].description, bestSeq[0][0], bestSeq[0][1]))
                         dnaMismatches=bestSeq[0][2]
                         proteinMismatches = bestSeq[0][3]
                         isTruncatedProtein=bestSeq[0][4]
                         if dnaMismatches!=None:
                             self.resistGenesMismatch[closestHit[0]] = [maxIdent*100, dnaMismatches, proteinMismatches, isTruncatedProtein, copyNumber, ['mapBased', str(thisDP), str(self.meanDP)]]
+
+                        infos= ":".join(map(str, ['mapBased', pident,mutationLine,sprot, sseq]))
+                        fo.write(">{0}\tproteinMatched:{1}\n{2}\n".format(cols[0], infos, qseq))
                             
                 os.system("rm {0}".format(outBlastFN))
             else:
+                #infos= ":".join(map(str, ['mapBased','closeHit', pident,mutationLine,sprot, sseq]))
                 fo.write(">{0}\tcloseHit:{1}\n{2}\n".format(gene, records1[gene].description, records1[gene].seq))
         records.close()
         records1.close()
