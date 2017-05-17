@@ -248,8 +248,7 @@ class CResistDB(object):
         fo.write("Inexact matches: {0} (sequences with many mismatches likely having indels causing frameshift, or sequence where there are many Ns because it's too  diverged from the reference sequence for the aligner to map to)\n".format(len(mismatchDic.keys()))) #print number of inexact matches
         
         for gene in sorted(mismatchDic.keys()):
-            pident, mismatches, proteinMismatches, copyNumber, isTruncatedProtein = mismatchDic[gene][:5]
-
+            pident, mismatches, proteinMismatches,  isTruncatedProtein, copyNumber = mismatchDic[gene][:5]
             if gene.startswith('TEM') and pident>0.95 and not isTruncatedProtein:
                 hasTEM=1
                 if copyNumber and float(copyNumber) > temCpn:
