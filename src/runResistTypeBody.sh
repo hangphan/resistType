@@ -99,13 +99,14 @@ then
     exit
 fi
 
+fq1=fastq/${SAMPLEID}/reads1.fq.gz
+fq2=fastq/${SAMPLEID}/reads2.fq.gz
+
+
 for f in fastq spadesOutput tmpDir resistType filteredFastq
 do
     mkdir -p $f/$SAMPLEID
 done
-
-fq1=fastq/${SAMPLEID}/reads1.fq.gz
-fq2=fastq/${SAMPLEID}/reads2.fq.gz
 
 if [ ! -s $fq2 ]
 then
@@ -124,9 +125,7 @@ then
     if [ $BAMFILE ]
     then
 	echo Running samtools 
-	$S
-
-CRIPTDIR/../bin/samtools sort -n $BAMFILE tmpDir/$SAMPLEID.temp 
+	$SCRIPTDIR/../bin/samtools sort -n $BAMFILE tmpDir/$SAMPLEID.temp 
 	$SCRIPTDIR/../bin/bedtools bamtofastq -i tmpDir/$SAMPLEID.temp.bam -fq fastq/$SAMPLEID/reads1.fq -fq2 fastq/$SAMPLEID/reads2.fq  
 	gzip -f  fastq/$SAMPLEID/reads1.fq 
 	gzip -f  fastq/$SAMPLEID/reads2.fq 
