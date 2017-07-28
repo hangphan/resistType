@@ -451,7 +451,7 @@ class CResistDB(object):
                 fo.write("{0},None,amoxicillin_ampicillin:R\n".format(gene))
                 if copyNumber and copyNumber > 2.5: #if the copy number of TEM is >2.5, it is likely to be resistant to co-amoxiclav
                     resistanceProfile['co-amoxiclav'] = 'R'
-                    fo.write("{0},copyNumber:{1},co-amoxiclav:R".format(gene, copyNumber))
+                    fo.write("{0},copyNumber:{1},co-amoxiclav:R\n".format(gene, copyNumber))
             #Processing ampC promoter region
             if gene in ['ampC_promoter', 'ampCpromoter'] and pident > 0.9 and hasAmpC:
 
